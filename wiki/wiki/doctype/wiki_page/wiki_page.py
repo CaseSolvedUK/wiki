@@ -135,9 +135,8 @@ class WikiPage(WebsiteGenerator):
 		"""
 		Update Wiki Page and create a Wiki Page Revision
 		"""
-		self.title = title
-
-		if content != self.content:
+		if content != self.content or title != self.title:
+			self.title = title
 			self.content = content
 			revision = frappe.new_doc("Wiki Page Revision")
 			revision.append("wiki_pages", {"wiki_page": self.name})
@@ -145,8 +144,7 @@ class WikiPage(WebsiteGenerator):
 			revision.message = edit_message
 			revision.raised_by = raised_by
 			revision.insert()
-
-		self.save()
+			self.save()
 
 	def verify_permission(self):
 		permitted = self.allow_guest or frappe.session.user != "Guest"
