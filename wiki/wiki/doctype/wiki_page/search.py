@@ -83,9 +83,17 @@ def rebuild_index():
 	from redis.commands.search.field import TextField
 	from redis.commands.search.indexDefinition import IndexDefinition
 	from redis.exceptions import ResponseError
+	from frappe.search.website_search import build_index_for_all_routes
 
 	r = frappe.cache()
 	r.set_value("wiki_page_index_in_progress", True)
+
+	# Standard search index rebuild
+	use_redisearch = frappe.db.get_single_value("Wiki Settings", "use_redisearch_for_search")
+	if not use_redisearch or not _redisearch_available:
+		build_index_for_all_routes()
+		r.set_value("wiki_page_index_in_progress", False)
+		return
 
 	# Options for index creation
 	schema = (
@@ -114,7 +122,9 @@ def rebuild_index():
 
 
 def rebuild_index_in_background():
-	if not frappe.cache().get_value("wiki_page_index_in_progress"):
+	r = frappe.cache()
+	if not r.get_value("wiki_page_index_in_progress"):
+		r.set_value("wiki_page_index_in_progress", True)
 		print(f"Queued rebuilding of search index for {frappe.local.site}")
 		frappe.enqueue(rebuild_index, queue="long")
 
